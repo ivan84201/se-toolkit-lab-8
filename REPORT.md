@@ -4,19 +4,82 @@ Paste your checkpoint evidence below. Add screenshots as image files in the repo
 
 ## Task 1A — Bare agent
 
-<!-- Paste the agent's response to "What is the agentic loop?" and "What labs are available in our LMS?" -->
+Based on my exploration of the workspace, here are the available labs:                                                                     
+
+Required Labs (5 tasks)                                                                                                                    
+
+Location: /root/se-toolkit-lab-8/lab/tasks/required/                                                                                       
+
+ • task-1.md                                                                                                                               
+ • task-2.md                                                                                                                               
+ • task-3.md                                                                                                                               
+ • task-4.md                                                                                                                               
+ • task-5.md                                                                                                                               
+
+Optional Labs (1 task)                                                                                                                     
+
+Location: /root/se-toolkit-lab-8/lab/tasks/optional/                                                                                       
+
+ • task-1.md                                      
+
+Based on my exploration of the workspace, here are the available labs:                                                                     
+
+Required Labs (5 tasks)                                                                                                                    
+
+Location: /root/se-toolkit-lab-8/lab/tasks/required/                                                                                       
+
+ • task-1.md                                                                                                                               
+ • task-2.md                                                                                                                               
+ • task-3.md                                                                                                                               
+ • task-4.md                                                                                                                               
+ • task-5.md                                                                                                                               
+
+Optional Labs (1 task)                                                                                                                     
+
+Location: /root/se-toolkit-lab-8/lab/tasks/optional/                                                                                       
+
+ • task-1.md                                                                                                                               
+
+-------------------------------------------------------------------------------------------------------------------------------------------
 
 ## Task 1B — Agent with LMS tools
 
-<!-- Paste the agent's response to "What labs are available?" and "Describe the architecture of the LMS system" -->
+🐈 nanobot
+Here are the available labs:                                                                                                               
+
+ 1 Lab 01 – Products, Architecture & Roles                                                                                                 
+ 2 Lab 02 — Run, Fix, and Deploy a Backend Service                                                                                         
+ 3 Lab 03 — Backend API: Explore, Debug, Implement, Deploy                                                                                 
+ 4 Lab 04 — Testing, Front-end, and AI Agents                                                                                              
+ 5 Lab 05 — Data Pipeline and Analytics Dashboard                                                                                          
+ 6 Lab 06 — Build Your Own Agent                                                                                                           
+ 7 Lab 07 — Build a Client with an AI Coding Agent                                                                                         
+ 8 lab-08                                                                                                                                  
+
+Is there a specific lab you'd like to explore or get more information about?  
+
+🐈 nanobot
+The backend is running and responding (I can see successful requests in the logs). The empty result likely means the database hasn't been  
+populated yet.   
 
 ## Task 1C — Skill prompt
 
-<!-- Paste the agent's response to "Show me the scores" (without specifying a lab) -->
+Here are the available labs. Which one would you like to see the scores for?                                                               
+
+ 1 Lab 01 – Products, Architecture & Roles                                                                                                 
+ 2 Lab 02 — Run, Fix, and Deploy a Backend Service                                                                                         
+ 3 Lab 03 — Backend API: Explore, Debug, Implement, Deploy                                                                                 
+ 4 Lab 04 — Testing, Front-end, and AI Agents                                                                                              
+ 5 Lab 05 — Data Pipeline and Analytics Dashboard                                                                                          
+ 6 Lab 06 — Build Your Own Agent                                                                                                           
+ 7 Lab 07 — Build a Client with an AI Coding Agent                                                                                         
+ 8 Lab 08 — lab-08                                                                                                                         
+
+Just let me know which lab (e.g., "lab-04" or "Lab 04") and I'll show you the pass rates and scores! 
 
 ## Task 2A — Deployed agent
 
-<!-- Paste a short nanobot startup log excerpt showing the gateway started inside Docker -->
+
 
 ## Task 2B — Web client
 
