@@ -137,38 +137,52 @@ Just let me know which lab number (or name) you'd like to see the scores for!
 
 ## Task 3A — Structured logging
 
-backend-1  | INFO:     172.20.0.9:59904 - "GET /analytics/pass-rates?lab=4 HTTP/1.1" 200 OK
-backend-1  | 2026-04-01 13:39:00,025 INFO [lms_backend.main] [main.py:62] [trace_id=284dc246510f1bdf757a50421fcefa8e span_id=8eb01e97fa3d23f0 resource.service.name=Learning Management Service trace_sampled=True] - request_started
-backend-1  | 2026-04-01 13:39:00,028 INFO [lms_backend.auth] [auth.py:30] [trace_id=284dc246510f1bdf757a50421fcefa8e span_id=8eb01e97fa3d23f0 resource.service.name=Learning Management Service trace_sampled=True] - auth_success
-backend-1  | 2026-04-01 13:39:00,037 INFO [lms_backend.main] [main.py:74] [trace_id=284dc246510f1bdf757a50421fcefa8e span_id=8eb01e97fa3d23f0 resource.service.name=Learning Management Service trace_sampled=True] - request_completed
-backend-1  | INFO:     172.20.0.9:59908 - "GET /learners/ HTTP/1.1" 200
-backend-1  | INFO:     172.20.0.9:59908 - "GET /learners/ HTTP/1.1" 200 OK
-backend-1  | 2026-04-01 13:39:19,120 INFO [lms_backend.main] [main.py:74] [trace_id=75fe66d63f108307ea016a341dfb2610 span_id=1cc3e9ee6d72bb1c resource.service.name=Learning Management Service trace_sampled=True] - request_completed
-backend-1  | 2026-04-01 13:39:34,716 INFO [lms_backend.main] [main.py:62] [trace_id=ea16f8040053581f92cb1db3043266be span_id=a4c400355643e57c resource.service.name=Learning Management Service trace_sampled=True] - request_started
-backend-1  | 2026-04-01 13:39:34,719 INFO [lms_backend.auth] [auth.py:30] [trace_id=ea16f8040053581f92cb1db3043266be span_id=a4c400355643e57c resource.service.name=Learning Management Service trace_sampled=True] - auth_success
-backend-1  | 2026-04-01 13:39:34,753 INFO [lms_backend.main] [main.py:74] [trace_id=ea16f8040053581f92cb1db3043266be span_id=a4c400355643e57c resource.service.name=Learning Management Service trace_sampled=True] - request_completed
-backend-1  | INFO:     172.20.0.9:53926 - "GET /analytics/pass-rates?lab=6 HTTP/1.1" 200 OK
-backend-1  | INFO:     172.20.0.9:53926 - "GET /analytics/pass-rates?lab=6 HTTP/1.1" 200
-backend-1  | 2026-04-01 13:39:36,728 INFO [lms_backend.main] [main.py:62] [trace_id=5c5a3899283160bd49c140b915bdd112 span_id=74bda181b794a5a2 resource.service.name=Learning Management Service trace_sampled=True] - request_started
-backend-1  | 2026-04-01 13:39:36,731 INFO [lms_backend.auth] [auth.py:30] [trace_id=5c5a3899283160bd49c140b915bdd112 span_id=74bda181b794a5a2 resource.service.name=Learning Management Service trace_sampled=True] - auth_success
-backend-1  | 2026-04-01 13:39:36,742 INFO [lms_backend.main] [main.py:62] [trace_id=a78cd567b2a0ff317f472c81a7b95bcf span_id=082bb6b1dbf6e222 resource.service.name=Learning Management Service trace_sampled=True] - request_started
-backend-1  | 2026-04-01 13:39:36,746 INFO [lms_backend.auth] [auth.py:30] [trace_id=a78cd567b2a0ff317f472c81a7b95bcf span_id=082bb6b1dbf6e222 resource.service.name=Learning Management Service trace_sampled=True] - auth_success
-backend-1  | 2026-04-01 13:39:36,763 INFO [lms_backend.main] [main.py:74] [trace_id=5c5a3899283160bd49c140b915bdd112 span_id=74bda181b794a5a2 resource.service.name=Learning Management Service trace_sampled=True] - request_completed
-backend-1  | INFO:     172.20.0.9:53926 - "GET /analytics/completion-rate?lab=6 HTTP/1.1" 200 OK
-backend-1  | INFO:     172.20.0.9:53926 - "GET /analytics/completion-rate?lab=6 HTTP/1.1" 200
-backend-1  | INFO:     172.20.0.9:53940 - "GET /analytics/top-learners?lab=6&limit=5 HTTP/1.1" 200 OK
-
-backend-1  | 2026-04-01 13:39:36,765 INFO [lms_backend.main] [main.py:74] [trace_id=a78cd567b2a0ff317f472c81a7b95bcf span_id=082bb6b1dbf6e222 resource.service.name=Learning Management Service trace_sampled=True] - request_completed
-backend-1  | INFO:     172.20.0.9:53940 - "GET /analytics/top-learners?lab=6&limit=5 HTTP/1.1" 200
-backend-1  | 2026-04-01 15:58:10,646 INFO [lms_backend.main] [main.py:62] [trace_id=2f0f42b2b920f388c4e8d120e8981ce0 span_id=90bbb2fdb89ce724 resource.service.name=Learning Management Service trace_sampled=True] - request_started
-backend-1  | 2026-04-01 15:58:10,647 INFO [lms_backend.auth] [auth.py:30] [trace_id=2f0f42b2b920f388c4e8d120e8981ce0 span_id=90bbb2fdb89ce724 resource.service.name=Learning Management Service trace_sampled=True] - auth_success
-backend-1  | 2026-04-01 15:58:10,648 INFO [lms_backend.db.items] [items.py:16] [trace_id=2f0f42b2b920f388c4e8d120e8981ce0 span_id=90bbb2fdb89ce724 resource.service.name=Learning Management Service trace_sampled=True] - db_query
-backend-1  | 2026-04-01 15:58:10,651 ERROR [lms_backend.db.items] [items.py:23] [trace_id=2f0f42b2b920f388c4e8d120e8981ce0 span_id=90bbb2fdb89ce724 resource.service.name=Learning Management Service trace_sampled=True] - db_query
-backend-1  | INFO:     172.20.0.10:33858 - "GET /items/ HTTP/1.1" 404 Not Found
-backend-1  | 2026-04-01 15:58:10,651 WARNING [lms_backend.routers.items] [items.py:23] [trace_id=2f0f42b2b920f388c4e8d120e8981ce0 span_id=90bbb2fdb89ce724 resource.service.name=Learning Management Service trace_sampled=True] - items_list_failed_as_not_found
-backend-1  | 2026-04-01 15:58:10,652 INFO [lms_backend.main] [main.py:74] [trace_id=2f0f42b2b920f388c4e8d120e8981ce0 span_id=90bbb2fdb89ce724 resource.service.name=Learning Management Service trace_sampled=True] - request_completed
-backend-1  | INFO:     172.20.0.10:33858 - "GET /items/ HTTP/1.1" 404
-
+{
+    "_msg": "request_completed",
+    "_stream": "{service.name=\"Learning Management Service\",telemetry.auto.version=\"0.61b0\",telemetry.sdk.language=\"python\",telemetry.sdk.name=\"opentelemetry\",telemetry.sdk.version=\"1.40.0\"}",
+    "_stream_id": "00000000000000004bfe2483b590ccd2aa73fe0838569f74",
+    "_time": "2026-04-01T19:14:02.124118016Z",
+    "duration_ms": "384",
+    "event": "request_completed",
+    "method": "GET",
+    "otelServiceName": "Learning Management Service",
+    "otelSpanID": "a1e2d2d6f1e2e66b",
+    "otelTraceID": "302cb6aab64d5811af12241df5c8a2dd",
+    "otelTraceSampled": "true",
+    "path": "/items/",
+    "scope.name": "lms_backend.main",
+    "scope.version": "unknown",
+    "service.name": "Learning Management Service",
+    "severity": "INFO",
+    "span_id": "a1e2d2d6f1e2e66b",
+    "status": "404",
+    "telemetry.auto.version": "0.61b0",
+    "telemetry.sdk.language": "python",
+    "telemetry.sdk.name": "opentelemetry",
+    "telemetry.sdk.version": "1.40.0",
+    "trace_id": "302cb6aab64d5811af12241df5c8a2dd"
+}
+{
+    "_msg": "items_list_failed_as_not_found",
+    "_stream": "{service.name=\"Learning Management Service\",telemetry.auto.version=\"0.61b0\",telemetry.sdk.language=\"python\",telemetry.sdk.name=\"opentelemetry\",telemetry.sdk.version=\"1.40.0\"}",
+    "_stream_id": "00000000000000004bfe2483b590ccd2aa73fe0838569f74",
+    "_time": "2026-04-01T19:14:02.122440448Z",
+    "event": "items_list_failed_as_not_found",
+    "otelServiceName": "Learning Management Service",
+    "otelSpanID": "a1e2d2d6f1e2e66b",
+    "otelTraceID": "302cb6aab64d5811af12241df5c8a2dd",
+    "otelTraceSampled": "true",
+    "scope.name": "lms_backend.routers.items",
+    "scope.version": "unknown",
+    "service.name": "Learning Management Service",
+    "severity": "WARN",
+    "span_id": "a1e2d2d6f1e2e66b",
+    "telemetry.auto.version": "0.61b0",
+    "telemetry.sdk.language": "python",
+    "telemetry.sdk.name": "opentelemetry",
+    "telemetry.sdk.version": "1.40.0",
+    "trace_id": "302cb6aab64d5811af12241df5c8a2dd"
+}
 ![VictoriaLogs query results](imag.png)
 ## Task 3B — Traces
 
