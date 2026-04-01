@@ -103,7 +103,37 @@ nanobot-1  | 2026-04-01 00:30:59.442 | INFO     | nanobot.agent.loop:run:280 - A
 
 ## Task 2B — Web client
 
-<!-- Screenshot of a conversation with the agent in the Flutter web app -->
+![web client chat screenshot](image.png)
+
+Chat:
+Connected to Nanobot!
+
+Start by asking:
+• What can you do in this system?
+• What tools do you have right now?
+• Ask one question about the LMS or the system state.
+
+I am more than a chat UI only when the agent has tools, skills, and memory. Try discovering those capabilities from the conversation itself.
+
+===
+
+show me the scores
+
+===
+
+I'll help you view the scores! First, let me check which labs are available in the LMS.
+**Which lab would you like to see scores for?**
+
+1. Lab 01 – Products, Architecture & Roles
+2. Lab 02 — Run, Fix, and Deploy a Backend Service
+3. Lab 03 — Backend API: Explore, Debug, Implement, Deploy
+4. Lab 04 — Testing, Front-end, and AI Agents
+5. Lab 05 — Data Pipeline and Analytics Dashboard
+6. Lab 06 — Build Your Own Agent
+7. Lab 07 — Build a Client with an AI Coding Agent
+8. lab-08
+
+Just let me know which lab number (or name) you'd like to see the scores for!
 
 ## Task 3A — Structured logging
 

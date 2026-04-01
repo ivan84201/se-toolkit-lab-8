@@ -11,5 +11,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-nanobot-webchat = { path = "../nanobot-websocket-channel/nanobot-webchat", editable = true }
-mcp-webchat = { path = "../nanobot-websocket-channel/mcp-webchat", editable = true }
+# nanobot-webchat = { path = "../nanobot-websocket-channel/nanobot-webchat", editable = true }
+# mcp-webchat = { path = "../nanobot-websocket-channel/mcp-webchat", editable = true }
+nanobot-webchat = { workspace = true }
+mcp-webchat = { workspace = true }

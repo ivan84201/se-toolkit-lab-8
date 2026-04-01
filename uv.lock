@@ -8,6 +8,7 @@ members = [
     "mcp-lms",
     "mcp-webchat",
     "nanobot",
+    "nanobot-channel-protocol",
     "nanobot-webchat",
     "qwen-code-api",
 ]
