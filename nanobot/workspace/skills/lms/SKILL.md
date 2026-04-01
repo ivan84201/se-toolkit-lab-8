@@ -88,11 +88,18 @@ Trigger the LMS sync pipeline. May take a moment to complete.
 4. **Concise responses**: Keep answers focused on the user's question. Provide summary statistics first, then offer to show more details if needed.
 
 5. **Missing lab handling**: When a lab parameter is needed but not provided:
-   - Call `lms_labs` first
-   - Ask the user to specify which lab they're interested in
-   - Let the shared `structured-ui` skill handle the choice presentation on supported channels
+   - Call `lms_labs` first to get available labs
+   - Use the `mcp_webchat_ui_message` tool to present a structured choice UI to the user
+   - Each option should use the lab's `title` as the label and `id` as the value
+   - Wait for the user to select a lab before proceeding with the actual query
 
-6. **Capabilities explanation**: When the user asks "what can you do?", explain:
+6. **Structured UI integration**: When presenting lab choices or other multi-option selections:
+   - Call `mcp_webchat_ui_message` with `type: "choice"`
+   - Provide clear, concise labels for each option
+   - Include the `chat_id` from your runtime context to route to the active chat
+   - Let the `structured-ui` skill handle the generic UI behavior
+
+7. **Capabilities explanation**: When the user asks "what can you do?", explain:
    - You can query live LMS data about labs, learners, and performance metrics
    - You can show pass rates, completion rates, group performance, top learners, and submission timelines
    - You need a specific lab identifier for most performance queries
