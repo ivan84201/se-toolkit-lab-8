@@ -1,0 +1,3 @@
+❌ Planted bug fixed: DB failure returns 500, not 404
+    -> The backend has a planted bug that turns database failures into misleading 404 responses. Find it using the agent (stop postgres, trigger /items, investigate with logs/traces), fix the code, and redeploy. After the fix, a DB failure should return a proper 500 error, not a 404.
+    Details: SSH root@10.93.26.55: output does not match expected pattern 'PASS'. Got: FAIL: backend returns 404 on DB failure — the planted bug is still present

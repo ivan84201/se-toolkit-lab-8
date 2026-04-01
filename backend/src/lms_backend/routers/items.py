@@ -24,10 +24,10 @@ async def get_items(session: AsyncSession = Depends(get_session)):
             "items_list_failed",                                                                                                                                   
             extra={"event": "items_list_failed", "error": str(exc)},                                                                                               
         )                                                                                                                                                          
-        raise HTTPException(                                                                                                                                       
-            status_code=status.HTTP_500_SERVICE_UNAVAILABLE,                                                                                                       
-            detail="Database service unavailable",                                                                                                                 
-        ) from exc 
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database service unavailable",
+        ) from exc
 
 
 @router.get("/{item_id}", response_model=ItemRecord)
