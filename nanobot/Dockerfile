@@ -30,11 +30,16 @@ COPY --from=workspace mcp /app/mcp
 # Copy nanobot-websocket-channel for installing webchat packages
 COPY --from=workspace nanobot-websocket-channel /app/nanobot-websocket-channel
 
-# Change to nanobot directory and sync dependencies, then install mcp-lms
+# Change to nanobot directory and install all dependencies directly
 WORKDIR /app/nanobot
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync && \
-    uv pip install /app/mcp/mcp-lms
+    uv venv && \
+    uv pip install \
+        /app/nanobot-websocket-channel/mcp-webchat \
+        /app/nanobot-websocket-channel/nanobot-webchat \
+        /app/mcp/mcp-lms \
+        /app/mcp/mcp-obs \
+        "nanobot-ai>=0.1.4.post6"
 
 # ---
 # Stage 2: use a final image without uv

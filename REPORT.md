@@ -137,15 +137,77 @@ Just let me know which lab number (or name) you'd like to see the scores for!
 
 ## Task 3A — Structured logging
 
-<!-- Paste happy-path and error-path log excerpts, VictoriaLogs query screenshot -->
+backend-1  | INFO:     172.20.0.9:59904 - "GET /analytics/pass-rates?lab=4 HTTP/1.1" 200 OK
+backend-1  | 2026-04-01 13:39:00,025 INFO [lms_backend.main] [main.py:62] [trace_id=284dc246510f1bdf757a50421fcefa8e span_id=8eb01e97fa3d23f0 resource.service.name=Learning Management Service trace_sampled=True] - request_started
+backend-1  | 2026-04-01 13:39:00,028 INFO [lms_backend.auth] [auth.py:30] [trace_id=284dc246510f1bdf757a50421fcefa8e span_id=8eb01e97fa3d23f0 resource.service.name=Learning Management Service trace_sampled=True] - auth_success
+backend-1  | 2026-04-01 13:39:00,037 INFO [lms_backend.main] [main.py:74] [trace_id=284dc246510f1bdf757a50421fcefa8e span_id=8eb01e97fa3d23f0 resource.service.name=Learning Management Service trace_sampled=True] - request_completed
+backend-1  | INFO:     172.20.0.9:59908 - "GET /learners/ HTTP/1.1" 200
+backend-1  | INFO:     172.20.0.9:59908 - "GET /learners/ HTTP/1.1" 200 OK
+backend-1  | 2026-04-01 13:39:19,120 INFO [lms_backend.main] [main.py:74] [trace_id=75fe66d63f108307ea016a341dfb2610 span_id=1cc3e9ee6d72bb1c resource.service.name=Learning Management Service trace_sampled=True] - request_completed
+backend-1  | 2026-04-01 13:39:34,716 INFO [lms_backend.main] [main.py:62] [trace_id=ea16f8040053581f92cb1db3043266be span_id=a4c400355643e57c resource.service.name=Learning Management Service trace_sampled=True] - request_started
+backend-1  | 2026-04-01 13:39:34,719 INFO [lms_backend.auth] [auth.py:30] [trace_id=ea16f8040053581f92cb1db3043266be span_id=a4c400355643e57c resource.service.name=Learning Management Service trace_sampled=True] - auth_success
+backend-1  | 2026-04-01 13:39:34,753 INFO [lms_backend.main] [main.py:74] [trace_id=ea16f8040053581f92cb1db3043266be span_id=a4c400355643e57c resource.service.name=Learning Management Service trace_sampled=True] - request_completed
+backend-1  | INFO:     172.20.0.9:53926 - "GET /analytics/pass-rates?lab=6 HTTP/1.1" 200 OK
+backend-1  | INFO:     172.20.0.9:53926 - "GET /analytics/pass-rates?lab=6 HTTP/1.1" 200
+backend-1  | 2026-04-01 13:39:36,728 INFO [lms_backend.main] [main.py:62] [trace_id=5c5a3899283160bd49c140b915bdd112 span_id=74bda181b794a5a2 resource.service.name=Learning Management Service trace_sampled=True] - request_started
+backend-1  | 2026-04-01 13:39:36,731 INFO [lms_backend.auth] [auth.py:30] [trace_id=5c5a3899283160bd49c140b915bdd112 span_id=74bda181b794a5a2 resource.service.name=Learning Management Service trace_sampled=True] - auth_success
+backend-1  | 2026-04-01 13:39:36,742 INFO [lms_backend.main] [main.py:62] [trace_id=a78cd567b2a0ff317f472c81a7b95bcf span_id=082bb6b1dbf6e222 resource.service.name=Learning Management Service trace_sampled=True] - request_started
+backend-1  | 2026-04-01 13:39:36,746 INFO [lms_backend.auth] [auth.py:30] [trace_id=a78cd567b2a0ff317f472c81a7b95bcf span_id=082bb6b1dbf6e222 resource.service.name=Learning Management Service trace_sampled=True] - auth_success
+backend-1  | 2026-04-01 13:39:36,763 INFO [lms_backend.main] [main.py:74] [trace_id=5c5a3899283160bd49c140b915bdd112 span_id=74bda181b794a5a2 resource.service.name=Learning Management Service trace_sampled=True] - request_completed
+backend-1  | INFO:     172.20.0.9:53926 - "GET /analytics/completion-rate?lab=6 HTTP/1.1" 200 OK
+backend-1  | INFO:     172.20.0.9:53926 - "GET /analytics/completion-rate?lab=6 HTTP/1.1" 200
+backend-1  | INFO:     172.20.0.9:53940 - "GET /analytics/top-learners?lab=6&limit=5 HTTP/1.1" 200 OK
 
+backend-1  | 2026-04-01 13:39:36,765 INFO [lms_backend.main] [main.py:74] [trace_id=a78cd567b2a0ff317f472c81a7b95bcf span_id=082bb6b1dbf6e222 resource.service.name=Learning Management Service trace_sampled=True] - request_completed
+backend-1  | INFO:     172.20.0.9:53940 - "GET /analytics/top-learners?lab=6&limit=5 HTTP/1.1" 200
+backend-1  | 2026-04-01 15:58:10,646 INFO [lms_backend.main] [main.py:62] [trace_id=2f0f42b2b920f388c4e8d120e8981ce0 span_id=90bbb2fdb89ce724 resource.service.name=Learning Management Service trace_sampled=True] - request_started
+backend-1  | 2026-04-01 15:58:10,647 INFO [lms_backend.auth] [auth.py:30] [trace_id=2f0f42b2b920f388c4e8d120e8981ce0 span_id=90bbb2fdb89ce724 resource.service.name=Learning Management Service trace_sampled=True] - auth_success
+backend-1  | 2026-04-01 15:58:10,648 INFO [lms_backend.db.items] [items.py:16] [trace_id=2f0f42b2b920f388c4e8d120e8981ce0 span_id=90bbb2fdb89ce724 resource.service.name=Learning Management Service trace_sampled=True] - db_query
+backend-1  | 2026-04-01 15:58:10,651 ERROR [lms_backend.db.items] [items.py:23] [trace_id=2f0f42b2b920f388c4e8d120e8981ce0 span_id=90bbb2fdb89ce724 resource.service.name=Learning Management Service trace_sampled=True] - db_query
+backend-1  | INFO:     172.20.0.10:33858 - "GET /items/ HTTP/1.1" 404 Not Found
+backend-1  | 2026-04-01 15:58:10,651 WARNING [lms_backend.routers.items] [items.py:23] [trace_id=2f0f42b2b920f388c4e8d120e8981ce0 span_id=90bbb2fdb89ce724 resource.service.name=Learning Management Service trace_sampled=True] - items_list_failed_as_not_found
+backend-1  | 2026-04-01 15:58:10,652 INFO [lms_backend.main] [main.py:74] [trace_id=2f0f42b2b920f388c4e8d120e8981ce0 span_id=90bbb2fdb89ce724 resource.service.name=Learning Management Service trace_sampled=True] - request_completed
+backend-1  | INFO:     172.20.0.10:33858 - "GET /items/ HTTP/1.1" 404
+
+![VictoriaLogs query results](imag.png)
 ## Task 3B — Traces
 
-<!-- Screenshots: healthy trace span hierarchy, error trace -->
+![healthy trace](ima.png)
+![error trace](im.png)
 
 ## Task 3C — Observability MCP tools
 
-<!-- Paste agent responses to "any errors in the last hour?" under normal and failure conditions -->
+**No LMS backend errors in the last 10 minutes.** ✅
+
+The only errors detected were:
+- **Qwen Code API**: 2 errors (not related to LMS)
+
+The Learning Management Service appears to be running cleanly.
+
+
+
+**Yes, LMS backend errors detected in the last 10 minutes.** ❌
+
+**4 ERROR entries found:**
+
+| Time | Error Type | Details |
+|------|-----------|---------|
+| 19:09:23 | `gaierror` | DNS resolution failure - "Name or service not known" during sync pipeline |
+| 19:09:13 | `db_query` | "[Errno -2] Name or service not known" querying `item` table |
+| 19:09:11 | `db_query` | "[Errno -2] Name or service not known" querying `item` table |
+| 19:09:06 | `InterfaceError` | PostgreSQL connection closed during pass-rates query |
+
+**Root Cause:**
+The LMS backend cannot connect to its PostgreSQL database due to:
+1. **DNS resolution failure** - The database hostname cannot be resolved
+2. **Connection closed** - Existing database connections are dropping
+
+**Impact:**
+- All LMS API endpoints returning HTTP 500 errors
+- Health check reports "unhealthy" status
+- Lab scores, learner data, and sync operations all failing
+
+This is an infrastructure-level issue requiring database service recovery or network/DNS fix.
 
 ## Task 4A — Multi-step investigation
 
