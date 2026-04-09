@@ -13,13 +13,6 @@ class Settings(BaseSettings):
 
     cors_origins: list[str] = Field(..., alias="CORS_ORIGINS")
 
-    enable_interactions: bool = Field(..., alias="BACKEND_ENABLE_INTERACTIONS")
-    enable_learners: bool = Field(..., alias="BACKEND_ENABLE_LEARNERS")
-
-    autochecker_api_url: str = Field(..., alias="AUTOCHECKER_API_URL")
-    autochecker_email: str = Field(..., alias="AUTOCHECKER_API_LOGIN")
-    autochecker_password: str = Field(..., alias="AUTOCHECKER_API_PASSWORD")
-
     db_host: str = Field(..., alias="DB_HOST")
     db_port: int = Field(..., alias="DB_PORT")
     db_name: str = Field(..., alias="DB_NAME")

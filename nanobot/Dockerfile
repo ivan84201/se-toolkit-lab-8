@@ -27,19 +27,13 @@ COPY . /app/nanobot
 # Copy mcp directory for installing mcp-lms
 COPY --from=workspace mcp /app/mcp
 
-# Copy nanobot-websocket-channel for installing webchat packages
-COPY --from=workspace nanobot-websocket-channel /app/nanobot-websocket-channel
-
 # Change to nanobot directory and install all dependencies directly
 WORKDIR /app/nanobot
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv venv && \
     uv pip install \
-        /app/nanobot-websocket-channel/mcp-webchat \
-        /app/nanobot-websocket-channel/nanobot-webchat \
-        /app/mcp/mcp-lms \
-        /app/mcp/mcp-obs \
-        "nanobot-ai>=0.1.4.post6"
+    /app/mcp/mcp-lms \
+    "nanobot-ai>=0.1.4.post6"
 
 # ---
 # Stage 2: use a final image without uv
@@ -56,6 +50,11 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 # Make sure we use UTF-8 encoding
 ENV LANG=C.UTF-8
+
+# Install file reading tools for the LLM's exec tool
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    binutils \
+    && rm -rf /var/lib/apt/lists/*
 
 # Setup a non-root user
 RUN groupadd --system --gid 999 nonroot \

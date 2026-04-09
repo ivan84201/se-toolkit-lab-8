@@ -1,0 +1,19 @@
+[project]
+name = "tg-file-bot"
+version = "0.1.0"
+description = "Telegram bot for file tagging and retrieval"
+requires-python = "==3.14.*"
+dependencies = [
+  "aiogram>=3.20",
+  "httpx>=0.28",
+  "pydantic>=2.12",
+  "pydantic-settings>=2.12",
+  "websockets>=13.0",
+]
+
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["bot"]

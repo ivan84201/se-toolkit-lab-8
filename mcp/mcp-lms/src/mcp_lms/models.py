@@ -1,58 +1,22 @@
-"""Typed response models for the LMS backend API."""
+"""Typed response models for the file tagging & retrieval system."""
+
+from datetime import datetime
 
 from pydantic import BaseModel
 
 
-class HealthResult(BaseModel):
-    status: str
-    item_count: int | str = "unknown"
-    error: str = ""
-
-
-class Item(BaseModel):
+class FileRecord(BaseModel):
     id: int | None = None
-    type: str = "step"
-    parent_id: int | None = None
-    title: str = ""
-    description: str = ""
+    user_id: int
+    file_path: str
+    created_at: datetime | None = None
 
 
-class Learner(BaseModel):
+class TagRecord(BaseModel):
     id: int | None = None
-    external_id: str = ""
-    student_group: str = ""
+    name: str
 
 
-class PassRate(BaseModel):
-    task: str
-    avg_score: float
-    attempts: int
-
-
-class TimelineEntry(BaseModel):
-    date: str
-    submissions: int
-
-
-class GroupPerformance(BaseModel):
-    group: str
-    avg_score: float
-    students: int
-
-
-class TopLearner(BaseModel):
-    learner_id: int
-    avg_score: float
-    attempts: int
-
-
-class CompletionRate(BaseModel):
-    lab: str
-    completion_rate: float
-    passed: int
-    total: int
-
-
-class SyncResult(BaseModel):
-    new_records: int
-    total_records: int
+class FileWithTag(BaseModel):
+    file: FileRecord
+    tags: list[str]

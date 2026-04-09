@@ -1,0 +1,3 @@
+{"cursor": 1, "timestamp": "2026-04-09 17:41", "content": "- User prefers file analysis responses to contain only a comma-separated list of lowercase tags, with no additional text or formatting.\n- User is repeatedly analyzing a 31-page Russian-language academic presentation PDF (`presentation.pdf`).\n- System encountered repeated rate limit and authentication token errors between 15:46 and 16:33.\n- Workspace long-term memory and session history files were initially empty."}
+{"cursor": 2, "timestamp": "2026-04-09 18:02", "content": "(nothing)"}
+{"cursor": 3, "timestamp": "2026-04-09 19:56", "content": "(nothing)"}

@@ -12,7 +12,8 @@ from starlette.middleware.base import RequestResponseEndpoint
 from starlette.responses import Response
 
 from lms_backend.auth import verify_api_key
-from lms_backend.routers import analytics, interactions, items, learners, pipeline
+from lms_backend.routers import files
+from lms_backend.db.migrations import create_tables
 from lms_backend.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,8 @@ async def lifespan(app: FastAPI):
     # (via OTEL_LOGS_EXPORTER=otlp). We only need to fix uvicorn.access, which has
     # propagate=False by default, so its HTTP access lines reach the OTel handler.
     logging.getLogger("uvicorn.access").propagate = True
+    await create_tables()
+    logger.info("database_tables_created", extra={"event": "database_tables_created"})
     yield
 
 
@@ -93,38 +96,8 @@ app.add_middleware(
 )
 
 app.include_router(
-    items.router,
-    prefix="/items",
-    tags=["items"],
-    dependencies=[Depends(verify_api_key)],
-)
-
-if settings.enable_interactions:
-    app.include_router(
-        interactions.router,
-        prefix="/interactions",
-        tags=["interactions"],
-        dependencies=[Depends(verify_api_key)],
-    )
-
-if settings.enable_learners:
-    app.include_router(
-        learners.router,
-        prefix="/learners",
-        tags=["learners"],
-        dependencies=[Depends(verify_api_key)],
-    )
-
-app.include_router(
-    pipeline.router,
-    prefix="/pipeline",
-    tags=["pipeline"],
-    dependencies=[Depends(verify_api_key)],
-)
-
-app.include_router(
-    analytics.router,
-    prefix="/analytics",
-    tags=["analytics"],
+    files.router,
+    prefix="/files",
+    tags=["files"],
     dependencies=[Depends(verify_api_key)],
 )

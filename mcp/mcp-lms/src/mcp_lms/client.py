@@ -1,4 +1,4 @@
-"""Async HTTP client for the LMS backend API."""
+"""Async HTTP client for the backend file tagging & retrieval API."""
 
 from __future__ import annotations
 
@@ -6,24 +6,14 @@ from typing import Any, TypeVar
 
 import httpx
 from pydantic import BaseModel
-from mcp_lms.models import (
-    CompletionRate,
-    GroupPerformance,
-    HealthResult,
-    Item,
-    Learner,
-    PassRate,
-    SyncResult,
-    TimelineEntry,
-    TopLearner,
-)
+from mcp_lms.models import FileRecord, TagRecord
 
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
 
 
 class LMSClient:
-    """Client for the LMS backend API."""
+    """Client for the backend file tagging & retrieval API."""
 
     def __init__(
         self,
@@ -57,8 +47,9 @@ class LMSClient:
         path: str,
         *,
         params: dict[str, str | int] | None = None,
+        json: dict[str, Any] | None = None,
     ) -> Any:
-        response = await self._http_client.request(method, path, params=params)
+        response = await self._http_client.request(method, path, params=params, json=json)
         response.raise_for_status()
         return response.json()
 
@@ -82,68 +73,76 @@ class LMSClient:
         payload = await self._request_json("GET", path, params=params)
         return model.model_validate(payload)
 
-    async def _post_model(self, path: str, model: type[ModelT]) -> ModelT:
-        payload = await self._request_json("POST", path)
-        return model.model_validate(payload)
+    async def _delete(self, path: str) -> dict[str, Any]:
+        response = await self._http_client.delete(path)
+        response.raise_for_status()
+        return {}
 
-    async def health_check(self) -> HealthResult:
-        try:
-            items = await self.get_items()
-            return HealthResult(status="healthy", item_count=len(items))
-        except httpx.ConnectError:
-            return HealthResult(
-                status="unhealthy", error=f"connection refused ({self.base_url})"
-            )
-        except httpx.HTTPStatusError as error:
-            return HealthResult(
-                status="unhealthy", error=f"HTTP {error.response.status_code}"
-            )
-        except Exception as error:
-            return HealthResult(status="unhealthy", error=str(error))
+    # === File operations ===
 
-    async def get_items(self) -> list[Item]:
-        return await self._get_list("/items/", Item)
+    async def add_file(
+        self, user_id: int, file_path: str, tags: list[str] | None = None
+    ) -> FileRecord:
+        """Add a file by path. The server reads the file content and stores it.
 
-    async def get_labs(self) -> list[Item]:
-        return [item for item in await self.get_items() if item.type == "lab"]
+        `file_path` here is a local filesystem path the MCP server can read.
+        The upload uses multipart form data: the server stores it as
+        files/<user_id>/<filename>.
+        """
+        from pathlib import Path
 
-    async def get_learners(self) -> list[Learner]:
-        return await self._get_list("/learners/", Learner)
+        local_path = Path(file_path)
+        if not local_path.is_file():
+            raise FileNotFoundError(f"Local file not found: {file_path}")
 
-    async def get_pass_rates(self, lab: str) -> list[PassRate]:
-        return await self._get_list(
-            "/analytics/pass-rates",
-            PassRate,
-            params={"lab": lab},
+        content = local_path.read_bytes()
+        tag_str = ",".join(tags) if tags else None
+
+        response = await self._http_client.post(
+            "/files/",
+            data={"user_id": user_id, "tags": tag_str},
+            files={"file": (local_path.name, content, "application/octet-stream")},
+        )
+        response.raise_for_status()
+        return FileRecord.model_validate(response.json())
+
+    async def delete_file(self, file_id: int) -> dict[str, Any]:
+        return await self._delete(f"/files/{file_id}")
+
+    async def get_user_files(self, user_id: int) -> list[FileRecord]:
+        return await self._get_list(f"/files/user/{user_id}", FileRecord)
+
+    # === Tag operations ===
+
+    async def get_file_tags(self, file_id: int) -> list[str]:
+        return await self._get_list(f"/files/{file_id}/tags", TagRecord)
+
+    async def add_tags(self, file_id: int, tags: list[str]) -> list[str]:
+        return await self._request_json(
+            "POST", f"/files/{file_id}/tags", json=tags
         )
 
-    async def get_timeline(self, lab: str) -> list[TimelineEntry]:
-        return await self._get_list(
-            "/analytics/timeline",
-            TimelineEntry,
-            params={"lab": lab},
+    async def remove_tags(self, file_id: int, tags: list[str]) -> list[str]:
+        return await self._request_json(
+            "DELETE", f"/files/{file_id}/tags", json=tags
         )
 
-    async def get_groups(self, lab: str) -> list[GroupPerformance]:
-        return await self._get_list(
-            "/analytics/groups",
-            GroupPerformance,
-            params={"lab": lab},
-        )
+    async def read_file_content(self, file_id: int) -> dict:
+        """Read text content of a file by ID.
 
-    async def get_top_learners(self, lab: str, limit: int = 5) -> list[TopLearner]:
-        return await self._get_list(
-            "/analytics/top-learners",
-            TopLearner,
-            params={"lab": lab, "limit": limit},
-        )
+        Returns a dict with: file_id, filename, file_path, content, is_binary, truncated.
+        """
+        return await self._request_json("GET", f"/files/{file_id}/content")
 
-    async def get_completion_rate(self, lab: str) -> CompletionRate:
-        return await self._get_model(
-            "/analytics/completion-rate",
-            CompletionRate,
-            params={"lab": lab},
-        )
+    async def get_user_tags(self, user_id: int) -> list[str]:
+        """Get all unique tags used by a user across their files."""
+        return await self._request_json("GET", f"/files/user/{user_id}/tags")
 
-    async def sync_pipeline(self) -> SyncResult:
-        return await self._post_model("/pipeline/sync", SyncResult)
+    async def search_files_by_tag(self, user_id: int, tag: str) -> dict:
+        """Find all files for a user that have a specific tag.
+
+        Returns a dict with: files (list of file records with tags), tag, message.
+        """
+        return await self._request_json(
+            "GET", f"/files/user/{user_id}/search", params={"tag": tag}
+        )

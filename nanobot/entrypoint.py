@@ -2,13 +2,15 @@
 """
 Entrypoint for nanobot Docker container.
 
-Resolves environment variables into config at runtime, then launches nanobot gateway.
+Resolves environment variables into config at runtime, then launches nanobot gateway
+and the OpenAI-compatible HTTP API server.
 """
 
 import json
 import os
 import subprocess
 import sys
+import threading
 from pathlib import Path
 
 
@@ -44,39 +46,19 @@ def main():
         config["gateway"]["port"] = int(gateway_port)
 
     # Override MCP server env vars (LMS backend URL and API key)
-    lms_backend_url = os.environ.get("NANOBOT_LMS_BACKEND_URL")                                                                                                                        
-    lms_api_key = os.environ.get("NANOBOT_LMS_API_KEY")                                                                                                                                
-                                                                                                                                                                                         
-    if "tools" in config and "mcpServers" in config["tools"]:                                                                                                                          
-        if "lms" in config["tools"]["mcpServers"]:                                                                                                                                     
-            if lms_backend_url:                                                                                                                                                        
-                config["tools"]["mcpServers"]["lms"]["env"]["NANOBOT_LMS_BACKEND_URL"] = (                                                                                             
-                    lms_backend_url                                                                                                                                                    
-                )                                                                                                                                                                      
-            if lms_api_key:                                                                                                                                                            
-                config["tools"]["mcpServers"]["lms"]["env"]["NANOBOT_LMS_API_KEY"] = (                                                                                                 
-                    lms_api_key                                                                                                                                                        
+    lms_backend_url = os.environ.get("NANOBOT_LMS_BACKEND_URL")
+    lms_api_key = os.environ.get("NANOBOT_LMS_API_KEY")
+
+    if "tools" in config and "mcpServers" in config["tools"]:
+        if "lms" in config["tools"]["mcpServers"]:
+            if lms_backend_url:
+                config["tools"]["mcpServers"]["lms"]["env"]["NANOBOT_LMS_BACKEND_URL"] = (
+                    lms_backend_url
                 )
-
-    # Configure webchat MCP server for structured UI message delivery
-    nanobot_access_key = os.environ.get("NANOBOT_ACCESS_KEY")
-    nanobot_gateway_host = os.environ.get("NANOBOT_GATEWAY_CONTAINER_ADDRESS")
-    nanobot_gateway_port = os.environ.get("NANOBOT_GATEWAY_CONTAINER_PORT")
-
-    if nanobot_access_key and nanobot_gateway_host and nanobot_gateway_port:
-        ui_relay_url = f"http://{nanobot_gateway_host}:{nanobot_gateway_port}"
-        if "mcp_webchat" not in config["tools"]["mcpServers"]:
-            config["tools"]["mcpServers"]["mcp_webchat"] = {
-                "command": "python",
-                "args": ["-m", "mcp_webchat"],
-                "env": {
-                    "NANOBOT_UI_RELAY_URL": ui_relay_url,
-                    "NANOBOT_ACCESS_KEY": nanobot_access_key
-                }
-            }
-        else:
-            config["tools"]["mcpServers"]["mcp_webchat"]["env"]["NANOBOT_UI_RELAY_URL"] = ui_relay_url
-            config["tools"]["mcpServers"]["mcp_webchat"]["env"]["NANOBOT_ACCESS_KEY"] = nanobot_access_key
+            if lms_api_key:
+                config["tools"]["mcpServers"]["lms"]["env"]["NANOBOT_LMS_API_KEY"] = (
+                    lms_api_key
+                )
 
     # Write resolved config
     with open(resolved_path, "w", encoding="utf-8") as f:
@@ -87,7 +69,34 @@ def main():
     # Run nanobot gateway using the venv's Python and nanobot CLI
     # The venv is at /app/nanobot/.venv (not overwritten by volume mounts)
     venv_python = "/app/nanobot/.venv/bin/python"
-    
+
+    # Start the OpenAI-compatible HTTP API server in a background thread so
+    # external services (like the Telegram bot) can call nanobot via HTTP.
+    gateway_port = config["gateway"]["port"]
+    api_server_cmd = [
+        venv_python,
+        "-m",
+        "nanobot",
+        "serve",
+        "--port",
+        str(gateway_port),
+        "--host",
+        "0.0.0.0",
+        "--config",
+        str(resolved_path),
+        "--workspace",
+        str(workspace_path),
+    ]
+
+    def run_api_server():
+        """Run the HTTP API server in a background thread."""
+        subprocess.run(api_server_cmd, check=True)
+
+    api_thread = threading.Thread(target=run_api_server, daemon=True)
+    api_thread.start()
+    print(f"Started HTTP API server on 0.0.0.0:{gateway_port}", file=sys.stderr)
+
+    # Run the gateway in the main thread (it's a long-running process)
     subprocess.run([
         venv_python,
         "-m",

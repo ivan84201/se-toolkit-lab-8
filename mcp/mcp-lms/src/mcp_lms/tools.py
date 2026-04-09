@@ -15,14 +15,52 @@ class NoArgs(BaseModel):
     """Empty input model for tools that only need server-side configuration."""
 
 
-class LabQuery(BaseModel):
-    lab: str = Field(description="Lab identifier, e.g. 'lab-04'.")
-
-
-class TopLearnersQuery(LabQuery):
-    limit: int = Field(
-        default=5, ge=1, description="Max learners to return (default 5)."
+class FileCreateArgs(BaseModel):
+    user_id: int = Field(description="Telegram user identifier.")
+    file_path: str = Field(
+        description="Local filesystem path to the file to upload, e.g. '/tmp/report.pdf'."
     )
+    tags: list[str] = Field(
+        default_factory=list,
+        description="Optional tags to attach to the file.",
+    )
+
+
+class FileDeleteArgs(BaseModel):
+    file_id: int = Field(description="ID of the file to delete.")
+
+
+class UserFilesArgs(BaseModel):
+    user_id: int = Field(description="Telegram user identifier.")
+
+
+class FileTagsArgs(BaseModel):
+    file_id: int = Field(description="ID of the file.")
+
+
+class AddTagsArgs(BaseModel):
+    file_id: int = Field(description="ID of the file.")
+    tags: list[str] = Field(description="Tags to attach. Will be normalized to lowercase.")
+
+
+class RemoveTagsArgs(BaseModel):
+    file_id: int = Field(description="ID of the file.")
+    tags: list[str] = Field(description="Tags to remove.")
+
+
+class ReadFileContentArgs(BaseModel):
+    file_id: int = Field(
+        description="ID of the file to read. Use the returned file_path with the exec tool to read content."
+    )
+
+
+class GetUserTagsArgs(BaseModel):
+    user_id: int = Field(description="Telegram user identifier.")
+
+
+class SearchFilesByTagArgs(BaseModel):
+    user_id: int = Field(description="Telegram user identifier.")
+    tag: str = Field(description="Tag name to search for (case-insensitive).")
 
 
 ToolPayload = BaseModel | Sequence[BaseModel]
@@ -43,106 +81,130 @@ class ToolSpec:
         return Tool(name=self.name, description=self.description, inputSchema=schema)
 
 
-async def _health(client: LMSClient, _args: BaseModel) -> ToolPayload:
-    return await client.health_check()
+async def _add_file(client: LMSClient, args: FileCreateArgs) -> ToolPayload:
+    return await client.add_file(args.user_id, args.file_path, args.tags)
 
 
-async def _labs(client: LMSClient, _args: BaseModel) -> ToolPayload:
-    return await client.get_labs()
+async def _delete_file(client: LMSClient, args: FileDeleteArgs) -> ToolPayload:
+    return await client.delete_file(args.file_id)
 
 
-async def _learners(client: LMSClient, _args: BaseModel) -> ToolPayload:
-    return await client.get_learners()
+async def _get_user_files(client: LMSClient, args: UserFilesArgs) -> ToolPayload:
+    return await client.get_user_files(args.user_id)
 
 
-async def _pass_rates(client: LMSClient, args: BaseModel) -> ToolPayload:
-    return await client.get_pass_rates(_require_lab_query(args).lab)
+async def _get_file_tags(client: LMSClient, args: FileTagsArgs) -> ToolPayload:
+    return await client.get_file_tags(args.file_id)
 
 
-async def _timeline(client: LMSClient, args: BaseModel) -> ToolPayload:
-    return await client.get_timeline(_require_lab_query(args).lab)
+async def _add_tags(client: LMSClient, args: AddTagsArgs) -> ToolPayload:
+    return await client.add_tags(args.file_id, args.tags)
 
 
-async def _groups(client: LMSClient, args: BaseModel) -> ToolPayload:
-    return await client.get_groups(_require_lab_query(args).lab)
+async def _remove_tags(client: LMSClient, args: RemoveTagsArgs) -> ToolPayload:
+    return await client.remove_tags(args.file_id, args.tags)
 
 
-async def _top_learners(client: LMSClient, args: BaseModel) -> ToolPayload:
-    query = _require_top_learners_query(args)
-    return await client.get_top_learners(query.lab, limit=query.limit)
+async def _read_file_content(client: LMSClient, args: ReadFileContentArgs) -> ToolPayload:
+    """Return file metadata and the full filesystem path for reading via exec tool."""
+    result = await client.read_file_content(args.file_id)
+    # result contains: file_id, filename, file_path, content, is_binary, truncated
+    # Construct the full path inside nanobot container where files are mounted
+    # Files are mounted at /app/nanobot/workspace/files/<user_id>/<filename>
+    # The file_path from backend is relative (e.g. "123/report.pdf")
+    file_path_relative = result.get("file_path", "")
+    full_path = f"/app/nanobot/workspace/files/{file_path_relative}"
+    return {
+        "file_id": result.get("file_id", args.file_id),
+        "filename": result.get("filename", "unknown"),
+        "file_path": full_path,
+        "is_binary": result.get("is_binary", False),
+        "truncated": result.get("truncated", False),
+        "message": (
+            f"File is available at path: {full_path}. "
+            f"Use the exec tool to read it: `cat {full_path}` for text files, "
+            f"`head {full_path}` for preview, or `strings {full_path}` for binary/PDF files."
+        ),
+    }
 
 
-async def _completion_rate(client: LMSClient, args: BaseModel) -> ToolPayload:
-    return await client.get_completion_rate(_require_lab_query(args).lab)
+async def _get_user_tags(client: LMSClient, args: GetUserTagsArgs) -> ToolPayload:
+    return await client.get_user_tags(args.user_id)
 
 
-async def _sync_pipeline(client: LMSClient, _args: BaseModel) -> ToolPayload:
-    return await client.sync_pipeline()
-
-
-def _require_lab_query(args: BaseModel) -> LabQuery:
-    if not isinstance(args, LabQuery):
-        raise TypeError(f"Expected {LabQuery.__name__}, got {type(args).__name__}")
-    return args
-
-
-def _require_top_learners_query(args: BaseModel) -> TopLearnersQuery:
-    if not isinstance(args, TopLearnersQuery):
-        raise TypeError(
-            f"Expected {TopLearnersQuery.__name__}, got {type(args).__name__}"
-        )
-    return args
+async def _search_files_by_tag(
+    client: LMSClient, args: SearchFilesByTagArgs
+) -> ToolPayload:
+    return await client.search_files_by_tag(args.user_id, args.tag)
 
 
 TOOL_SPECS = (
     ToolSpec(
-        "lms_health",
-        "Check if the LMS backend is healthy and report the item count.",
-        NoArgs,
-        _health,
-    ),
-    ToolSpec("lms_labs", "List all labs available in the LMS.", NoArgs, _labs),
-    ToolSpec(
-        "lms_learners",
-        "List all learners registered in the LMS.",
-        NoArgs,
-        _learners,
+        "add_file",
+        "Upload a file from the local filesystem to the user's storage. "
+        "The file is stored at files/<user_id>/<filename> on the server. "
+        "Use when a user uploads or references a file. "
+        "`file_path` must be a readable local filesystem path.",
+        FileCreateArgs,
+        _add_file,
     ),
     ToolSpec(
-        "lms_pass_rates",
-        "Get pass rates (avg score and attempt count per task) for a lab.",
-        LabQuery,
-        _pass_rates,
+        "delete_file",
+        "Delete a file record and all its attached tags.",
+        FileDeleteArgs,
+        _delete_file,
     ),
     ToolSpec(
-        "lms_timeline",
-        "Get submission timeline (date + submission count) for a lab.",
-        LabQuery,
-        _timeline,
+        "get_user_files",
+        "List all files uploaded by a specific user.",
+        UserFilesArgs,
+        _get_user_files,
     ),
     ToolSpec(
-        "lms_groups",
-        "Get group performance (avg score + student count per group) for a lab.",
-        LabQuery,
-        _groups,
+        "get_file_tags",
+        "Get all tags attached to a specific file.",
+        FileTagsArgs,
+        _get_file_tags,
     ),
     ToolSpec(
-        "lms_top_learners",
-        "Get top learners by average score for a lab.",
-        TopLearnersQuery,
-        _top_learners,
+        "add_tags",
+        "Attach tags to an existing file. Tags are normalized to lowercase and deduplicated.",
+        AddTagsArgs,
+        _add_tags,
     ),
     ToolSpec(
-        "lms_completion_rate",
-        "Get completion rate (passed / total) for a lab.",
-        LabQuery,
-        _completion_rate,
+        "remove_tags",
+        "Remove specific tags from a file. No error if tags don't exist.",
+        RemoveTagsArgs,
+        _remove_tags,
     ),
     ToolSpec(
-        "lms_sync_pipeline",
-        "Trigger the LMS sync pipeline. May take a moment.",
-        NoArgs,
-        _sync_pipeline,
+        "read_file_content",
+        "Get the filesystem path of a file so you can read its content. "
+        "Returns the full path inside the nanobot container (e.g. /app/nanobot/workspace/files/123/report.pdf). "
+        "After calling this, use the exec tool to read the file: "
+        "`cat <path>` for text files, `head <path>` for preview, "
+        "`strings <path>` for binary/PDF files to extract readable text. "
+        "This works for ALL file types including PDFs.",
+        ReadFileContentArgs,
+        _read_file_content,
+    ),
+    ToolSpec(
+        "get_user_tags",
+        "List all unique tags used by a specific user across all their files. "
+        "Call this FIRST to see what tags exist before searching. "
+        "Returns a flat list of tag name strings.",
+        GetUserTagsArgs,
+        _get_user_tags,
+    ),
+    ToolSpec(
+        "search_files_by_tag",
+        "Find all files for a user that have a specific tag. "
+        "Returns file records with their tags. "
+        "Use this after get_user_tags to find files matching a topic. "
+        "Use get_user_tags first to discover available tags.",
+        SearchFilesByTagArgs,
+        _search_files_by_tag,
     ),
 )
 TOOLS_BY_NAME = {spec.name: spec for spec in TOOL_SPECS}

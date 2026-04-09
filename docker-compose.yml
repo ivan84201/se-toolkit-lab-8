@@ -59,40 +59,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/src/lms_backend/data/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - files_data:/app/files
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:?'POSTGRES_USER is required'} -d ${POSTGRES_DB:?'POSTGRES_DB is required'}",
-        ]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?'POSTGRES_USER is required'} -d ${POSTGRES_DB:?'POSTGRES_DB is required'}" ]
       interval: 5s
       timeout: 5s
       retries: 5
-
-  pgadmin:
-    image: ${REGISTRY_PREFIX_DOCKER_HUB:-}dpage/pgadmin4:latest
-    restart: unless-stopped
-    networks:
-      - lms-network
-    environment:
-      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:?'PGADMIN_EMAIL is required'}
-      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:?'PGADMIN_PASSWORD is required'}
-      - SCRIPT_NAME=/utils/pgadmin
-    ports:
-      - ${PGADMIN_HOST_ADDRESS:?'PGADMIN_HOST_ADDRESS is required'}:${PGADMIN_HOST_PORT:?'PGADMIN_HOST_PORT is required'}:80
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  client-web-react:
-    build:
-      context: client-web-react/
-      args:
-        REGISTRY_PREFIX_DOCKER_HUB: ${REGISTRY_PREFIX_DOCKER_HUB:-}
-    volumes:
-      - client-web-react:/output
-
-  # Task 2A — uncomment and adapt this service after you create repo-local nanobot/.
   nanobot:
     build:
       context: ./nanobot
@@ -106,16 +78,19 @@ services:
     user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
     networks:
       - lms-network
+    ports:
+      - ${NANOBOT_HOST_ADDRESS:-127.0.0.1}:${NANOBOT_HOST_PORT:-42006}:${NANOBOT_GATEWAY_CONTAINER_PORT}
     volumes:
       # Mount only the parts nanobot needs to edit or read from the repo.
       # Don't mount the entire nanobot dir as it would overwrite the .venv
       - ./nanobot/config.json:/app/nanobot/config.json:ro
       - ./nanobot/workspace:/app/nanobot/workspace
       - ./mcp:/app/mcp
-      - ./nanobot-websocket-channel:/app/nanobot-websocket-channel
       - ./wiki:/app/wiki:ro
       - ./lab:/app/lab:ro
       - ./contributing:/app/contributing:ro
+      # Mount user files inside workspace so exec tool can read them
+      - files_data:/app/nanobot/workspace/files:ro
     environment:
       # Task 1 used VM-shell URLs. In Docker, use service-to-service URLs instead.
       - LLM_API_KEY=${LLM_API_KEY:?'LLM_API_KEY is required'}
@@ -127,9 +102,6 @@ services:
       - NANOBOT_VICTORIATRACES_URL=http://victoriatraces:${CONST_VICTORIATRACES_CONTAINER_PORT:?'CONST_VICTORIATRACES_CONTAINER_PORT is required'}
       - NANOBOT_GATEWAY_CONTAINER_ADDRESS=${NANOBOT_GATEWAY_CONTAINER_ADDRESS:?'NANOBOT_GATEWAY_CONTAINER_ADDRESS is required'}
       - NANOBOT_GATEWAY_CONTAINER_PORT=${NANOBOT_GATEWAY_CONTAINER_PORT:?'NANOBOT_GATEWAY_CONTAINER_PORT is required'}
-      - NANOBOT_WEBCHAT_CONTAINER_ADDRESS=${NANOBOT_WEBCHAT_CONTAINER_ADDRESS:?'NANOBOT_WEBCHAT_CONTAINER_ADDRESS is required'}
-      - NANOBOT_WEBCHAT_CONTAINER_PORT=${NANOBOT_WEBCHAT_CONTAINER_PORT:?'NANOBOT_WEBCHAT_CONTAINER_PORT is required'}
-      - NANOBOT_ACCESS_KEY=${NANOBOT_ACCESS_KEY:?'NANOBOT_ACCESS_KEY is required'}
       - OTEL_SERVICE_NAME=nanobot
       - OTEL_TRACES_EXPORTER=otlp
       - OTEL_METRICS_EXPORTER=none
@@ -141,47 +113,6 @@ services:
       - backend
       - qwen-code-api
       - otel-collector
-
-  # Task 2B — uncomment after you add nanobot-websocket-channel and want the Flutter build.
-  client-web-flutter:
-    build:
-      context: ./nanobot-websocket-channel/client-web-flutter
-      args:
-        REGISTRY_PREFIX_DOCKER_HUB: ${REGISTRY_PREFIX_DOCKER_HUB:-}
-        REGISTRY_PREFIX_GHCR: ${REGISTRY_PREFIX_GHCR:-}
-    volumes:
-      - client-web-flutter:/output
-
-  caddy:
-    image: ${REGISTRY_PREFIX_DOCKER_HUB:-}caddy:2.11-alpine
-    networks:
-      - lms-network
-    depends_on:
-      - backend
-      - client-web-react
-      # Task 2B — uncomment after you enable the Flutter build service above.
-      - client-web-flutter
-      # Task 2A — uncomment after you enable the nanobot service above.
-      - nanobot
-      - qwen-code-api
-      - victorialogs
-      - victoriatraces
-    environment:
-      - CADDY_CONTAINER_PORT=${CADDY_CONTAINER_PORT:?'CADDY_CONTAINER_PORT is required'}
-      - BACKEND_CONTAINER_PORT=${BACKEND_CONTAINER_PORT:?'BACKEND_CONTAINER_PORT is required'}
-      # Task 2A — uncomment when you proxy /ws/chat to nanobot.
-      - NANOBOT_WEBCHAT_CONTAINER_PORT=${NANOBOT_WEBCHAT_CONTAINER_PORT:?'NANOBOT_WEBCHAT_CONTAINER_PORT is required'}
-      - QWEN_CODE_API_CONTAINER_PORT=${QWEN_CODE_API_CONTAINER_PORT:?'QWEN_CODE_API_CONTAINER_PORT is required'}
-      - CONST_PGADMIN_CONTAINER_PORT=${CONST_PGADMIN_CONTAINER_PORT:?'CONST_PGADMIN_CONTAINER_PORT is required'}
-      - CONST_VICTORIALOGS_CONTAINER_PORT=${CONST_VICTORIALOGS_CONTAINER_PORT:?'CONST_VICTORIALOGS_CONTAINER_PORT is required'}
-      - CONST_VICTORIATRACES_CONTAINER_PORT=${CONST_VICTORIATRACES_CONTAINER_PORT:?'CONST_VICTORIATRACES_CONTAINER_PORT is required'}
-    ports:
-      - ${GATEWAY_HOST_ADDRESS:?'GATEWAY_HOST_ADDRESS is required'}:${GATEWAY_HOST_PORT:?'GATEWAY_HOST_PORT is required'}:${CADDY_CONTAINER_PORT}
-    volumes:
-      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
-      - client-web-react:/srv/react:ro
-      # Task 2B — uncomment when you want Caddy to serve the Flutter build output.
-      - client-web-flutter:/srv/flutter:ro
 
   qwen-code-api:
     build:
@@ -232,32 +163,27 @@ services:
       retries: 3
       start_period: 10s
 
-  # Optional Task 1 — uncomment after you add the Telegram client repo in Task 2.
-  # client-telegram-bot:
-  #   build:
-  #     context: ./nanobot-websocket-channel/client-telegram-bot
-  #     additional_contexts:
-  #       workspace: ./nanobot-websocket-channel
-  #     dockerfile: Dockerfile
-  #     args:
-  #       REGISTRY_PREFIX_DOCKER_HUB: ${REGISTRY_PREFIX_DOCKER_HUB:-}
-  #   restart: unless-stopped
-  #   networks:
-  #     - lms-network
-  #   environment:
-  #     - BOT_TOKEN=${BOT_TOKEN:?'BOT_TOKEN is required'}
-  #     - NANOBOT_WS_URL=${NANOBOT_WS_URL:?'NANOBOT_WS_URL is required'}
-  #     - NANOBOT_ACCESS_KEY=${NANOBOT_ACCESS_KEY:?'NANOBOT_ACCESS_KEY is required'}
-  #     - OTEL_SERVICE_NAME=client-telegram-bot
-  #     - OTEL_TRACES_EXPORTER=otlp
-  #     - OTEL_METRICS_EXPORTER=none
-  #     - OTEL_LOGS_EXPORTER=otlp
-  #     - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:${CONST_OTEL_COLLECTOR_GRPC_PORT:?'CONST_OTEL_COLLECTOR_GRPC_PORT is required'}
-  #     - OTEL_EXPORTER_OTLP_PROTOCOL=grpc
-  #     - OTEL_PYTHON_LOG_CORRELATION=true
-  #   depends_on:
-  #     - nanobot
-  #     - otel-collector
+  # Optional — Telegram bot for file tagging
+  client-telegram-bot:
+    build:
+      context: ./frontend/telegram
+      additional_contexts:
+        workspace: .
+      args:
+        REGISTRY_PREFIX_DOCKER_HUB: ${REGISTRY_PREFIX_DOCKER_HUB:-}
+    restart: unless-stopped
+    networks:
+      - lms-network
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN:?'BOT_TOKEN is required'}
+      - BACKEND_URL=${TELEGRAM_BOT_BACKEND_URL:?'TELEGRAM_BOT_BACKEND_URL is required'}
+      - BACKEND_API_KEY=${LMS_API_KEY:?'LMS_API_KEY is required'}
+      - NANOBOT_API_URL=http://nanobot:${NANOBOT_GATEWAY_CONTAINER_PORT:?'NANOBOT_GATEWAY_CONTAINER_PORT is required'}
+      - LLM_API_MODEL=${LLM_API_MODEL:?'LLM_API_MODEL is required'}
+    depends_on:
+      - backend
+      - postgres
+      - nanobot
 
   victorialogs:
     image: ${REGISTRY_PREFIX_DOCKER_HUB:-}victoriametrics/victoria-logs:latest
@@ -298,10 +224,12 @@ services:
 
 volumes:
   postgres_data:
+  files_data:
   client-web-react:
   client-web-flutter:
   victorialogs_data:
   victoriatraces_data:
+
 
 networks:
   lms-network:

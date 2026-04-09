@@ -1,123 +1,137 @@
 ---
 name: lms
-description: Use LMS MCP tools for live course data
+description: Use LMS MCP tools for file tagging and retrieval
 always: true
 ---
 
 # LMS Skill
 
-You have access to the LMS (Learning Management System) MCP server tools for querying live course data. Use these tools to answer questions about labs, learners, scores, and performance metrics.
+You have access to the LMS (Learning Management System) MCP server tools for managing files and tags in PostgreSQL. Use these tools to upload files, attach tags, search files by tags, read file content, and retrieve files by user or tag.
 
 ## Available LMS Tools
 
-### `lms_health`
-Check if the LMS backend is healthy and report the item count.
-- **Parameters**: None
-- **Returns**: Status (healthy/unhealthy), item_count, error message if any
-- **Use when**: User asks about system status or before querying other LMS data to ensure backend is available
+### `get_user_files`
+List all files uploaded by a specific user.
+- **Parameters**:
+  - `user_id` (required): Telegram user identifier
+- **Returns**: Array of file records (id, user_id, file_path, created_at)
+- **Use when**: You need to see what files a user has, or find a file ID by name/date
 
-### `lms_labs`
-List all labs available in the LMS.
-- **Parameters**: None
-- **Returns**: Array of lab objects with id, type, parent_id, title, description
-- **Use when**: User asks about available labs, or when a lab-specific query is made without specifying which lab
+### `get_user_tags`
+List all unique tags used by a specific user across all their files.
+- **Parameters**:
+  - `user_id` (required): Telegram user identifier
+- **Returns**: Flat list of tag name strings (e.g. ["python", "tutorial", "draft"])
+- **Use when**: You need to discover what topics/tags exist for a user. **Call this FIRST** before searching by tag.
 
-### `lms_learners`
-List all learners registered in the LMS.
-- **Parameters**: None
-- **Returns**: Array of learner objects with id, external_id, student_group
-- **Use when**: User asks about enrolled students or learner information
+### `search_files_by_tag`
+Find all files for a user that have a specific tag.
+- **Parameters**:
+  - `user_id` (required): Telegram user identifier
+  - `tag` (required): Tag name to search for (case-insensitive)
+- **Returns**: Object with `files` (array of file records with their tags), `tag`, and `message`
+- **Use when**: You need to find files relevant to a topic. Use `get_user_tags` first to discover available tags.
 
-### `lms_pass_rates`
-Get pass rates (average score and attempt count per task) for a specific lab.
-- **Parameters**: 
-  - `lab` (required): Lab identifier, e.g., 'lab-04'
-- **Returns**: Array of task objects with task name, avg_score, attempts
-- **Use when**: User asks about scores, pass rates, or task performance for a specific lab
+### `read_file_content`
+Get the filesystem path of a file so you can read its content via the exec tool.
+- **Parameters**:
+  - `file_id` (required): ID of the file to read
+- **Returns**: Object with `file_id`, `filename`, `file_path` (full path inside container), `is_binary`, and a `message` with exec commands to use
+- **Use when**: You need to actually read what's inside a file. Use this AFTER finding relevant files via `get_user_files` or `search_files_by_tag`.
+- **How to read the file**: After calling this tool, use the **exec tool** with one of these commands:
+  - `cat <file_path>` — for text files (.py, .md, .txt, .json, etc.)
+  - `head -n 50 <file_path>` — for preview (first 50 lines)
+  - `strings <file_path>` — for binary/PDF files to extract readable text strings
+  - `wc -l <file_path>` — to check how many lines a file has
+- **Note**: This works for ALL file types including PDFs, because the exec tool runs shell commands that can handle binary.
 
-### `lms_timeline`
-Get submission timeline (date + submission count) for a specific lab.
-- **Parameters**: 
-  - `lab` (required): Lab identifier, e.g., 'lab-04'
-- **Returns**: Array of objects with date and submissions count
-- **Use when**: User asks about submission patterns, activity over time, or when students submitted work
+### `get_file_tags`
+Get all tags attached to a specific file.
+- **Parameters**:
+  - `file_id` (required): ID of the file
+- **Returns**: Array of tag names (strings)
+- **Use when**: User asks what tags a file has, or you need to check existing tags
 
-### `lms_groups`
-Get group performance (average score + student count per group) for a specific lab.
-- **Parameters**: 
-  - `lab` (required): Lab identifier, e.g., 'lab-04'
-- **Returns**: Array of group objects with group name, avg_score, students count
-- **Use when**: User asks about group performance, class section comparisons, or team-based metrics
+### `add_file`
+Upload a file from the local filesystem to the user's storage.
+- **Parameters**:
+  - `user_id` (required): Telegram user identifier
+  - `file_path` (required): **Local filesystem path** on the MCP server, e.g. `/tmp/report.pdf`
+  - `tags` (optional): List of tag strings
+- **Returns**: File record with id, user_id, file_path, created_at
+- **Note**: Returns 409 if file with same name already exists for that user.
 
-### `lms_top_learners`
-Get top learners by average score for a specific lab.
-- **Parameters**: 
-  - `lab` (required): Lab identifier, e.g., 'lab-04'
-  - `limit` (optional, default 5): Max learners to return
-- **Returns**: Array of learner objects with learner_id, avg_score, attempts
-- **Use when**: User asks about top performers, best scores, or leaderboards
+### `add_tags`
+Attach tags to an existing file. Tags normalized to lowercase and deduplicated.
+- **Parameters**:
+  - `file_id` (required): ID of the file
+  - `tags` (required): List of tag strings
+- **Returns**: Array of all tag names now attached to the file
 
-### `lms_completion_rate`
-Get completion rate (passed / total) for a specific lab.
-- **Parameters**: 
-  - `lab` (required): Lab identifier, e.g., 'lab-04'
-- **Returns**: Object with lab, completion_rate (percentage), passed count, total count
-- **Use when**: User asks about completion rates, how many students finished, or overall lab success rate
+### `remove_tags`
+Remove specific tags from a file. No error if tags don't exist.
+- **Parameters**:
+  - `file_id` (required): ID of the file
+  - `tags` (required): List of tag strings to remove
+- **Returns**: Array of remaining tag names
 
-### `lms_sync_pipeline`
-Trigger the LMS sync pipeline. May take a moment to complete.
-- **Parameters**: None
-- **Returns**: Confirmation of sync initiation
-- **Use when**: User requests a data sync, or when backend data appears stale/outdated
+### `delete_file`
+Delete a file record and all its attached tags.
+- **Parameters**:
+  - `file_id` (required): ID of the file to delete
 
-## Strategy Rules
+## Strategy Rules — How to Navigate the Database
 
-1. **Lab selection**: If the user asks for scores, pass rates, completion, groups, timeline, or top learners without naming a lab:
-   - First call `lms_labs` to get available labs
-   - Present the lab options to the user and ask them to choose
-   - Use each lab's `title` field as the user-facing label (e.g., "Lab 04 — Testing, Front-end, and AI Agents")
-   - Use the lab `id` field (e.g., 'lab-04') as the parameter value for tool calls
+**Follow this workflow when answering questions about files:**
 
-2. **Health check**: If any LMS tool returns an error or unexpected result, call `lms_health` first to verify the backend is operational.
+1. **Discover available tags** → Call `get_user_tags` with the user's `user_id` to see what topics exist.
 
-3. **Formatting**: 
-   - Display percentages with one decimal place (e.g., 97.2%)
-   - Show scores as numbers with one decimal place (e.g., 63.4)
-   - Format counts as plain integers (e.g., 239 students)
+2. **Find relevant files** → Use `search_files_by_tag` with tags that match the user's question. Or use `get_user_files` if they asked about all their files.
 
-4. **Concise responses**: Keep answers focused on the user's question. Provide summary statistics first, then offer to show more details if needed.
+3. **Get file paths** → Call `read_file_content` for each relevant file ID. This returns the full filesystem path.
 
-5. **Missing lab handling**: When a lab parameter is needed but not provided:
-   - Call `lms_labs` first to get available labs
-   - Use the `mcp_webchat_ui_message` tool to present a structured choice UI to the user
-   - Each option should use the lab's `title` as the label and `id` as the value
-   - Wait for the user to select a lab before proceeding with the actual query
+4. **Read file content via exec** → Use the **exec tool** to read the file:
+   - For text files: `cat <path>` or `head -n 100 <path>`
+   - For PDFs/binary: `strings <path>` (extracts readable text from any binary file)
+   - Check file size first: `wc -c <path>` if the file might be large
 
-6. **Structured UI integration**: When presenting lab choices or other multi-option selections:
-   - Call `mcp_webchat_ui_message` with `type: "choice"`
-   - Provide clear, concise labels for each option
-   - Include the `chat_id` from your runtime context to route to the active chat
-   - Let the `structured-ui` skill handle the generic UI behavior
+5. **Answer with sources** → Use the information from the file content to answer. Always mention which file(s) you found the info in (filename or ID).
 
-7. **Capabilities explanation**: When the user asks "what can you do?", explain:
-   - You can query live LMS data about labs, learners, and performance metrics
-   - You can show pass rates, completion rates, group performance, top learners, and submission timelines
-   - You need a specific lab identifier for most performance queries
-   - You can trigger data sync if needed
+6. **Handle insufficient data** → If no relevant tags exist or files don't contain enough info, say: "I could not find enough information in your files to answer this question. Try uploading relevant files or asking a more specific question."
+
+**Tag normalization**: Tags are lowercase. "Python" == "python".
+
+**File identification**: When user refers to a file by description, use `get_user_files` first to find matching file, then use its ID.
+
+**Batch operations**: Call `add_tags` once with all tags, not multiple calls.
+
+**Context awareness**: Always use the correct `user_id` from context.
 
 ## Example Interactions
 
-**User**: "What labs are available?"
-→ Call `lms_labs` and list the lab titles.
+**User**: "What files do I have?"
+→ Call `get_user_files` with user_id. Show the list.
 
-**User**: "Show me the scores"
-→ Call `lms_labs` first, then ask user to choose a lab.
+**User**: "What tags do I have?"
+→ Call `get_user_tags` with user_id. Show the list.
 
-**User**: "What's the completion rate for lab-04?"
-→ Call `lms_completion_rate` with lab='lab-04'.
+**User**: "Tell me about Python"
+→ Step 1: Call `get_user_tags` to see available tags.
+→ Step 2: If "python" exists, call `search_files_by_tag` with tag="python".
+→ Step 3: Call `read_file_content` for each relevant file to get the path.
+→ Step 4: Use exec: `strings <path>` to read the file content.
+→ Step 5: Answer based on content, mentioning source files.
 
-**User**: "Which lab has the lowest pass rate?"
-→ Call `lms_labs` to get all labs, then call `lms_pass_rates` for each lab, compare and report.
+**User**: "Find files tagged tutorial"
+→ Call `search_files_by_tag` with user_id, tag="tutorial".
 
-**User**: "Who are the top 3 students in lab-04?"
-→ Call `lms_top_learners` with lab='lab-04' and limit=3.
+**User**: "What's in file 5?"
+→ Call `read_file_content` with file_id=5 to get the path.
+→ Use exec: `cat <path>` (or `strings <path>` if binary) to read it.
+→ Show the content.
+
+**User**: "Tag my last file with 'important' and 'review-needed'"
+→ Call `get_user_files` to find most recent file, then `add_tags`.
+
+**User**: "What's the difference between my two Python files?"
+→ Call `search_files_by_tag` with tag="python", then `read_file_content` for each, then compare.

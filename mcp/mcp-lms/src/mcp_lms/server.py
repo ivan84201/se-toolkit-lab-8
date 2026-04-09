@@ -17,10 +17,14 @@ from mcp_lms.tools import TOOL_SPECS, TOOLS_BY_NAME, ToolPayload
 
 
 def _text(data: ToolPayload) -> list[TextContent]:
+    if isinstance(data, dict):
+        return [TextContent(type="text", text=json.dumps(data, ensure_ascii=False))]
+    if data is None:
+        return [TextContent(type="text", text="OK")]
     if isinstance(data, BaseModel):
         payload = data.model_dump()
     else:
-        payload = [item.model_dump() for item in data]
+        payload = [item.model_dump() if isinstance(item, BaseModel) else item for item in data]
     return [TextContent(type="text", text=json.dumps(payload, ensure_ascii=False))]
 
 

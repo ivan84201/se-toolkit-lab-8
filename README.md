@@ -1,75 +1,58 @@
-# Lab 8 — The Agent is the Interface
+### Product name - LLM_File_Manager_Bot
 
-[Sync your fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/syncing-a-fork#syncing-a-fork-branch-from-the-command-line) regularly — the lab gets updated.
+### Description:
 
-## Product brief
+stores user files, tags them for easier navigation, answer questions based on these files.
 
-> Your team has been running the LMS backend for weeks. Everyone queries data through the React dashboard or Swagger UI. Your team lead wants a new kind of interface: an AI agent that anyone can talk to in natural language. Nanobot is a lighter version of OpenClaw, and this kind of agent is becoming the new intelligent AI user interface. Instead of clicking through dashboards, users just ask questions — "which lab has the lowest pass rate?", "any errors in the last hour?" — and the agent figures out which API calls to make.
->
-> Set it up from scratch. Wire it into the system. Then extend it with observability tools so it can answer questions about system health too.
+### Demo:
 
-> [!IMPORTANT]
-> Do the whole lab on your **VM**. You can work through a plain SSH shell or through `VS Code` Remote-SSH. When this guide says `localhost`, it means the VM itself or a forwarded port from that VM. Do not install or run `nanobot` on your main machine.
+![demo1](1.png)
 
-## What you will learn
+![demo2](2.png)
 
-By the end of this lab, you should be able to say:
+### Product context:
 
-> 1. I can explain what makes an AI agent different from a regular client like a web app or a bot.
->    It is not just a self-hosted chat window: it has tools, skills, memory, and can act proactively.
-> 2. I set up nanobot from scratch — created the project, installed the framework, connected it to the Qwen API, wired it into Docker Compose, and talked to it.
-> 3. I saw what a bare agent does without tools (hallucinates) vs. with MCP tools (answers correctly) — and I understand why.
-> 4. I built MCP tools that let the agent query logs and traces, turning observability data into a conversational interface.
-> 5. I used the agent to investigate a failure, fix a planted bug, and configure it to report system health proactively.
+End users - anyone that needs to efficiently store and access medium amount of information for personal use. For example, students.
 
-## Architecture
+Problem - efficient handling of diverse files.
 
-By the end of the lab, the system looks like this.
+Solution - add tags to files using llm for efficient navigation. Then, llm can navigate these files and extract answers to user questions.
 
-In Lab 7 you built one client around your own LLM loop. Here, the agent becomes a shared system layer that multiple clients can talk to — and that layer has reusable tools, memory, and scheduled actions.
+### Features:
 
-```
-[Browser]            [Telegram, optional]
-    \                       /
-     \                     /
-      +---- [Nanobot Agent] ---- [LLM]
-                 |
-         +-------+-------+
-         |               |
-   [LMS Tools]   [Observability Tools]
-         |               |
-   [LMS Backend]    [Logs / Traces]
-         |
-    [Postgres]
-```
+file storage, automated tagging system, llm answers question based on user files.
 
-### What you start with
+### Usage:
 
-- **LMS app**: the React dashboard, FastAPI backend, and PostgreSQL database.
-- **Platform services**: Caddy reverse-proxies all traffic, and the Qwen Code API gives your agent access to the LLM.
-- **Observability stack**: OpenTelemetry Collector, VictoriaLogs, and VictoriaTraces already collect system telemetry.
+find @LLMFileManagerBot in telegram, upload your files, ask questions in plain text.
 
-### What you add
+### Deployment:
 
-- **Nanobot agent**: a natural-language interface to the LMS that can reason, call tools, and answer questions.
-- **Web chat client**: a WebSocket channel plus a Flutter web UI at `/flutter`, protected by `NANOBOT_ACCESS_KEY`.
-- **New agent capabilities**: LMS MCP tools first, then observability MCP tools, then a scheduled health-check job.
+## OS required - Ubuntu 24.04
 
-## Tasks
+## Required tools:
+docker
+git
+JSON
+uv
+Qwen LLM provider
 
-### Prerequisites
-
-1. Complete the [lab setup](./lab/setup/setup-simple.md#lab-setup)
-
-> **Note**: First time in this course? Do the [full setup](./lab/setup/setup-full.md#lab-setup) instead.
-
-### Required
-
-1. [Set Up the Agent](./lab/tasks/required/task-1.md) — install nanobot, configure Qwen API, add MCP tools, write skill prompt
-2. [Deploy and Connect a Web Client](./lab/tasks/required/task-2.md) — Dockerize nanobot, add WebSocket channel + Flutter chat UI
-3. [Give the Agent New Eyes](./lab/tasks/required/task-3.md) — explore observability data, write log/trace MCP tools
-4. [Diagnose a Failure and Make the Agent Proactive](./lab/tasks/required/task-4.md) — investigate a failure, schedule in-chat health checks, fix a planted bug
-
-### Optional
-
-1. [Add a Telegram Bot Client](./lab/tasks/optional/task-1.md) — same agent, different interface
+## Setup (paste commands to terminal 1 by 1):
+git clone https://github.com/ivan84201/se-toolkit-hackathon
+cd se-toolkit-hackathon
+uv sync --dev
+cp .env.docker.example .env.docker.secret
+## fill in .env.docker.secret with your data (see comments and values in <>)
+cd nanobot
+uv run nanobot onboard -c config.json
+## fill in nanobot config.json
+## Set up the custom provider (any OpenAI-compatible endpoint) and point it to the Qwen Code API:
+agents.defaults.workspace ./workspace
+agents.defaults.model coder-model
+agents.defaults.provider custom
+providers.custom.apiKey your QWEN_CODE_API_KEY from .env.docker.secret
+providers.custom.apiBase http://localhost:42005/v1
+## To start docker containers:
+docker compose --env-file .env.docker.secret up -d
+docker compose --env-file .env.docker.secret build
+docker compose --env-file .env.docker.secret build # second time if postgres crashed
